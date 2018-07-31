@@ -2,19 +2,19 @@
 ##### small rest api written in python to administer proftpd virtual users
 ---
 ### Available methods
-1. Show service status
+1. Show service status<br>
 `curl -X GET http://127.0.0.1:5000/`
-2. List all users
+2. List all users<br>
 `curl -X GET http://127.0.0.1:5000/users`
-3. Show details about a user
+3. Show details about a user<br>
 `curl -X GET http://127.0.0.1:5000/users/<user_name>`
-4. Create new user
+4. Create new user<br>
 `curl -X POST -H "Content-Type: application/json" http://127.0.0.1:5000/users -d '{"action": "create", "username": "<user_name>"}'`
-5. Delete user
+5. Delete user<br>
 `curl -X POST -H "Content-Type: application/json" http://127.0.0.1:5000/users -d '{"action": "delete", "username": "<user_name>"}'`
-6. Lock user
+6. Lock user<br>
 `curl -X POST -H "Content-Type: application/json" http://127.0.0.1:5000/users -d '{"action": "lock", "username": "<user_name>"}'`
-7. Unlock user
+7. Unlock user<br>
 `curl -X POST -H "Content-Type: application/json" http://127.0.0.1:5000/users -d '{"action": "unlock", "username": "<user_name>"}'`
-8. Show space on disk
+8. Show space on disk<br>
 `curl -X GET http://127.0.0.1:5000/quota`
