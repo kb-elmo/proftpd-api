@@ -26,8 +26,7 @@ def startup():
     if not ftpuser in user_list:
         print("admin user not found. attempting to create it.")
         try:
-            mk_user = user_create
-            result = mk_user.get(mk_user, ftpuser, True)["status"]
+            result = u.create_user(u, ftpuser, True)["status"]
             if result == "success":
                 print("Success")
             else:
@@ -80,6 +79,19 @@ class status(Resource):
 
 
 class users(Resource):
+    def create_user(self, user_name, admin=False):
+        passchars = string.ascii_letters+string.digits
+        password = ''.join(random.SystemRandom().choice(passchars) for i in range(24))
+        try:
+            if not os.path.exists(user_home):
+                os.makedirs(user_home)
+            os.chown(user_home, ftpuser_uid, ftpuser_gid)
+            os.system("echo \""+password+"\" | ftpasswd --passwd --file="+user_file+" --name="+user_name+" --home="+user_home+" --shell=/bin/false --uid="+str(ftpuser_uid)+" --stdin")
+            response = {'password': password, 'status': 'success'}
+        except Exception as err:
+            response = {'status': 'failed', 'error': str(err)}
+        return response
+
     def get(self):
         with open(user_file, "r") as f:
             userdata = f.readlines()
@@ -88,6 +100,7 @@ class users(Resource):
         for user in userdata:
             users.append(user.split(":")[0])
         return {'users': users}
+
     def post(self):
         try:
             action = request.json["action"]
@@ -97,23 +110,7 @@ class users(Resource):
                 return response
             user_home = ftpdata_dir+"/"+user_name
             if action == "create":
-                passchars = string.ascii_letters+string.digits
-                password = ''.join(random.SystemRandom().choice(passchars) for i in range(24))
-                try:
-                    if not os.path.exists(user_home):
-                        os.makedirs(user_home)
-                    os.chown(user_home, ftpuser_uid, ftpuser_gid)
-                    os.system("echo \""+password+"\" | ftpasswd --passwd --file="+user_file+" --name="+user_name+" --home="+user_home+" --shell=/bin/false --uid="+str(ftpuser_uid)+" --stdin")
-                    response = {'password': password, 'status': 'success'}
-                except Exception as err:
-                    response = {'status': 'failed', 'error': str(err)}
-            elif action == "delete":
-                try:
-                    shutil.rmtree(user_home, ignore_errors=True)
-                    os.system("ftpasswd --passwd --file="+user_file+" --name="+user_name+" --delete-user")
-                    response = {'status': 'success'}
-                except Exception as err:
-                    response = {'status': 'failed', 'error': str(err)}
+                response = self.create_user(user_name)
             elif action == "lock" or action == "unlock":
                 try:
                     os.system("ftpasswd --passwd --file="+user_file+" --name="+user_name+" --"+action)
@@ -144,6 +141,16 @@ class user_data(Resource):
                 response = {'name': userdata[0], 'uid': userdata[2], 'gid': userdata[3], 'home': userdata[5], 'shell': userdata[6], 'locked': locked}
         except:
             response = {'error': 'no such user'}
+        return response
+
+    def delete(self, user_name):
+        try:
+            user_home = ftpdata_dir+"/"+user_name
+            shutil.rmtree(user_home, ignore_errors=True)
+            os.system("ftpasswd --passwd --file="+user_file+" --name="+user_name+" --delete-user")
+            response = {'status': 'success'}
+        except Exception as err:
+            response = {'status': 'failed', 'error': str(err)}
         return response
 
 
