@@ -1,14 +1,20 @@
-# proftpd-api
-small rest api written in python to administer proftpd virtual users via ftpasswd
-
+# proFTPd API
+##### small rest api written in python to administer proftpd virtual users
+---
 ### Available methods
-URL | Function
------------- | -------------
-/ | Get the ProFTPd service status
-/users | show all users
-/users/<user_name> | details about a specific user
-/users/create/<user_name> | create new user
-/users/delete/<user_name> | delete user
-/users/lock/<user_name> | lock a user account
-/users/unlock/<user_name> | unlock user account
-/quota | show free space of ftpdata dir
+1. Show service status
+`curl -X GET http://127.0.0.1:5000/`
+2. List all users
+`curl -X GET http://127.0.0.1:5000/users`
+3. Show details about a user
+`curl -X GET http://127.0.0.1:5000/users/<user_name>`
+4. Create new user
+`curl -X POST -H "Content-Type: application/json" http://127.0.0.1:5000/users -d '{"action": "create", "username": "<user_name>"}'`
+5. Delete user
+`curl -X POST -H "Content-Type: application/json" http://127.0.0.1:5000/users -d '{"action": "delete", "username": "<user_name>"}'`
+6. Lock user
+`curl -X POST -H "Content-Type: application/json" http://127.0.0.1:5000/users -d '{"action": "lock", "username": "<user_name>"}'`
+7. Unlock user
+`curl -X POST -H "Content-Type: application/json" http://127.0.0.1:5000/users -d '{"action": "unlock", "username": "<user_name>"}'`
+8. Show space on disk
+`curl -X GET http://127.0.0.1:5000/quota`

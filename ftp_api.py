@@ -88,6 +88,43 @@ class users(Resource):
         for user in userdata:
             users.append(user.split(":")[0])
         return {'users': users}
+    def post(self):
+        try:
+            action = request.json["action"]
+            user_name = request.json["username"]
+            if user_name == ftpuser:
+                response = {'status': 'failed', 'error': 'You can\'t edit the admin user'}
+                return response
+            user_home = ftpdata_dir+"/"+user_name
+            if action == "create":
+                passchars = string.ascii_letters+string.digits
+                password = ''.join(random.SystemRandom().choice(passchars) for i in range(24))
+                try:
+                    if not os.path.exists(user_home):
+                        os.makedirs(user_home)
+                    os.chown(user_home, ftpuser_uid, ftpuser_gid)
+                    os.system("echo \""+password+"\" | ftpasswd --passwd --file="+user_file+" --name="+user_name+" --home="+user_home+" --shell=/bin/false --uid="+str(ftpuser_uid)+" --stdin")
+                    response = {'password': password, 'status': 'success'}
+                except Exception as err:
+                    response = {'status': 'failed', 'error': str(err)}
+            elif action == "delete":
+                try:
+                    shutil.rmtree(user_home, ignore_errors=True)
+                    os.system("ftpasswd --passwd --file="+user_file+" --name="+user_name+" --delete-user")
+                    response = {'status': 'success'}
+                except Exception as err:
+                    response = {'status': 'failed', 'error': str(err)}
+            elif action == "lock" or action == "unlock":
+                try:
+                    os.system("ftpasswd --passwd --file="+user_file+" --name="+user_name+" --"+action)
+                    response = {'status': 'success'}
+                except Exception as err:
+                    response = {'status': 'failed', 'error': str(err)}
+            else:
+                response = {'status': 'failed', 'error': 'no such action'}
+        except Exception as err:
+            response = {'status': 'failed', 'error': str(err)}
+        return response
 
 
 class user_data(Resource):
@@ -110,66 +147,6 @@ class user_data(Resource):
         return response
 
 
-class user_create(Resource):
-    def get(self, user_name, admin=False):
-        if (user_name == ftpuser) and (admin == False):
-            response = {'status': 'failed', 'error': 'You can\'t edit the admin user'}
-            return response
-        passchars = string.ascii_letters+string.digits
-        password = ''.join(random.SystemRandom().choice(passchars) for i in range(24))
-        user_home = ftpdata_dir+"/"+user_name
-        try:
-            if not os.path.exists(user_home):
-                os.makedirs(user_home)
-            os.chown(user_home, ftpuser_uid, ftpuser_gid)
-            os.system("echo \""+password+"\" | ftpasswd --passwd --file="+user_file+" --name="+user_name+" --home="+user_home+" --shell=/bin/false --uid="+str(ftpuser_uid)+" --stdin")
-            response = {'password': password, 'status': 'success'}
-        except Exception as err:
-            response = {'status': 'failed', 'error': str(err)}
-        return response
-
-
-class user_delete(Resource):
-    def get(self, user_name):
-        if user_name == ftpuser:
-            response = {'status': 'failed', 'error': 'You can\'t edit the admin user'}
-            return response
-        user_home = "/var/ftpdata/"+user_name
-        try:
-            shutil.rmtree(user_home, ignore_errors=True)
-            os.system("ftpasswd --passwd --file="+user_file+" --name="+user_name+" --delete-user")
-            response = {'status': 'success'}
-        except Exception as err:
-            response = {'status': 'failed', 'error': str(err)}
-        return response
-
-
-class user_lock(Resource):
-    def get(self, user_name):
-        if user_name == ftpuser:
-            response = {'status': 'failed', 'error': 'You can\'t edit the admin user'}
-            return response
-        try:
-            os.system("ftpasswd --passwd --file="+user_file+" --name="+user_name+" --lock")
-            response = {'status': 'success'}
-        except Exception as err:
-            response = {'status': 'failed', 'error': str(err)}
-        return response
-
-
-class user_unlock(Resource):
-    def get(self, user_name):
-        if user_name == ftpuser:
-            response = {'status': 'failed', 'error': 'You can\'t edit the admin user'}
-            return response
-        try:
-            os.system("ftpasswd --passwd --file="+user_file+" --name="+user_name+" --unlock")
-            response = {'status': 'success'}
-        except Exception as err:
-            response = {'status': 'failed', 'error': str(err)}
-        return response
-
-
 class usage(Resource):
     def get(self):
         try:
@@ -185,10 +162,6 @@ class usage(Resource):
 
 api.add_resource(users, '/users')
 api.add_resource(user_data, '/users/<user_name>')
-api.add_resource(user_create, '/users/create/<user_name>')
-api.add_resource(user_delete, '/users/delete/<user_name>')
-api.add_resource(user_lock, '/users/lock/<user_name>')
-api.add_resource(user_unlock, '/users/unlock/<user_name>')
 api.add_resource(usage, '/quota')
 api.add_resource(status, '/')
 
